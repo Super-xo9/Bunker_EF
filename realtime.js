@@ -58,7 +58,7 @@
 (function(){
 
   // ====== ЗАПОЛНИ ЭТИ ДВЕ СТРОКИ СВОИМИ ДАННЫМИ ИЗ SUPABASE ======
-  var SUPABASE_URL = 'https://jgjsehordxptkqrlawfs.supabase.co/rest/v1/';
+  var SUPABASE_URL = 'https://jgjsehordxptkqrlawfs.supabase.co';
   var SUPABASE_ANON_KEY = 'sb_publishable_Ui8IHK2Q-WC8fehQgYHIwQ_oJ9y9_NG';
   // =================================================================
 

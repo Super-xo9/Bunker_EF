@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Зимний Бункер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #e3e2e5;
+    --card-bg: #ffffff;
+    --ink: #18181c;
+    --muted: #8f8f97;
+    --label: #46464d;
+    --accent: #2f6fed;
+
+    --col-gap: 1.3vw;
+    --row-gap: 2.5vh;
+
+    --card-w: min(
+      calc((96vw - (3 * var(--col-gap))) / 4),
+      calc(((96vh - (2 * var(--row-gap))) / 3) * 1.5)
+    );
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{ margin: 0; padding: 0; }
+
+  html{
+    min-width: 1100px;
+    overflow-x: auto;
+  }
+
+  body{
+    background-color: var(--bg);
+    background-image: url('Бункер EF.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2vh 2vw;
+  }
+
+  .seats{
+    display: grid;
+    grid-template-columns: repeat(4, var(--card-w));
+    column-gap: var(--col-gap);
+    row-gap: var(--row-gap);
+  }
+
+  .seat-card{
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1.5 / 1;
+    background: var(--card-bg);
+    border-radius: calc(var(--card-w) * 0.06);
+    padding: calc(var(--card-w) * 0.032) calc(var(--card-w) * 0.045);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    user-select: none;
+    transition: transform .18s ease, box-shadow .18s ease;
+    box-shadow:
+      0 1px 2px rgba(20, 20, 30, 0.05),
+      0 12px 28px rgba(20, 20, 30, 0.07);
+  }
+
+  .seat-card:hover,
+  .seat-card:focus-visible{
+    transform: translateY(calc(var(--card-w) * -0.015));
+    box-shadow:
+      0 2px 4px rgba(20, 20, 30, 0.06),
+      0 18px 34px rgba(20, 20, 30, 0.10);
+    outline: none;
+  }
+
+  .seat-card.joined{
+    box-shadow:
+      0 0 0 calc(var(--card-w) * 0.016) var(--accent),
+      0 12px 28px rgba(20, 20, 30, 0.07);
+  }
+
+  .seat-card.joined::after{
+    content: "Вы";
+    position: absolute;
+    z-index: 2;
+    top: calc(var(--card-w) * 0.025);
+    right: calc(var(--card-w) * 0.025);
+    background: var(--accent);
+    color: #fff;
+    font-size: calc(var(--card-w) * 0.028);
+    font-weight: 700;
+    padding: calc(var(--card-w) * 0.012) calc(var(--card-w) * 0.03);
+    border-radius: 999px;
+  }
+
+  .seat-card[data-occupied-by]:not([data-occupied-by=""]):not(.joined)::before{
+    content: "";
+    position: absolute;
+    z-index: 2;
+    top: calc(var(--card-w) * 0.025);
+    left: calc(var(--card-w) * 0.025);
+    width: calc(var(--card-w) * 0.022);
+    height: calc(var(--card-w) * 0.022);
+    border-radius: 50%;
+    background: #3ecf6a;
+    box-shadow: 0 0 0 2px #fff;
+  }
+
+  .seat-video-bg{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    background: #000;
+    display: none;
+  }
+
+  .seat-card.video-active .seat-video-bg{ display: block; }
+  .seat-card.video-active .seat-avatar-wrap{ display: none; }
+
+  .seat-header,
+  .seat-avatar-wrap,
+  .seat-details{
+    position: relative;
+    z-index: 1;
+  }
+
+  .seat-number{
+    font-weight: 800;
+    font-size: calc(var(--card-w) * 0.048);
+    line-height: 1.15;
+    color: var(--ink);
+  }
+
+  .seat-sub{
+    margin-top: calc(var(--card-w) * 0.008);
+    font-size: calc(var(--card-w) * 0.032);
+    line-height: 1.15;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .seat-avatar-wrap{
+    display: flex;
+    justify-content: center;
+    margin-top: calc(var(--card-w) * 0.025);
+  }
+
+  .host-card .seat-avatar-wrap{
+    margin-top: calc(var(--card-w) * 0.11);
+  }
+
+  .seat-avatar-inner{
+    position: relative;
+    width: calc(var(--card-w) * 0.28);
+    height: calc(var(--card-w) * 0.28);
+    flex-shrink: 0;
+  }
+
+  .seat-avatar{
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #eef0f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid rgba(20, 20, 30, 0.06);
+  }
+
+  .seat-card.has-color .seat-avatar{
+    border: calc(var(--card-w) * 0.012) solid var(--player-color);
+  }
+
+  .seat-avatar img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .seat-cam-toggle{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    transform: translate(10%, 10%);
+    width: calc(var(--card-w) * 0.09);
+    height: calc(var(--card-w) * 0.09);
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--accent);
+  }
+
+  .seat-card.joined .seat-cam-toggle{ display: flex; }
+
+  .seat-cam-toggle.on{
+    background: #c23b3b;
+    border-color: #c23b3b;
+    color: #fff;
+  }
+
+  .seat-details{
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .details-col{
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+    font-size: calc(var(--card-w) * 0.03);
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--label);
+  }
+
+  .details-col.left{ text-align: left; }
+
+  .details-col.right{
+    text-align: right;
+    margin-top: 1.5em;
+  }
+
+  .other-functions-card{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .other-functions-label{
+    font-weight: 800;
+    font-size: calc(var(--card-w) * 0.048);
+    line-height: 1.15;
+    color: var(--ink);
+    text-align: center;
+    padding: 0 calc(var(--card-w) * 0.05);
+  }
+
+  .other-functions-list{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .other-function-btn{
+    width: 100%;
+    padding: 16px 18px;
+    border: none;
+    border-radius: 14px;
+    background: #eaf0fe;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+
+  .other-function-btn:hover{ background: #dde8fd; }
+
+  .modal-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(18, 18, 24, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+    z-index: 1000;
+  }
+
+  .modal-overlay.open{ opacity: 1; pointer-events: auto; }
+
+  .modal-panel{
+    position: relative;
+    width: min(90vw, 720px);
+    max-height: 88vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 24px;
+    padding: 46px 52px 42px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    transform: translateY(10px) scale(.97);
+    transition: transform .22s ease;
+  }
+
+  .modal-overlay.open .modal-panel{ transform: translateY(0) scale(1); }
+
+  .modal-close{
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 38px;
+    height: 38px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    color: #9a9aa1;
+    cursor: pointer;
+    border-radius: 9px;
+    transition: background .15s ease, color .15s ease;
+  }
+
+  .modal-close:hover{ background: #f1f1f3; color: #333; }
+
+  .modal-avatar-block{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+
+  .modal-avatar{
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: #eef0f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid rgba(20, 20, 30, 0.06);
+  }
+
+  .modal-avatar img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .modal-avatar-actions{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .avatar-btn, .avatar-remove-btn, .camera-btn{
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 9px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    border: none;
+  }
+
+  .avatar-btn{ background: #eaf0fe; color: var(--accent); }
+  .avatar-btn:hover{ background: #dde8fd; }
+  .avatar-remove-btn{ background: #f4f4f6; color: #9a9aa1; }
+  .avatar-remove-btn:hover{ background: #ececee; color: #6c6c74; }
+  .camera-btn{ background: #eafcef; color: #1f9c4a; }
+  .camera-btn:hover{ background: #ddf7e4; }
+  .camera-btn.on{ background: #fdeaea; color: #c23b3b; }
+  .camera-btn.on:hover{ background: #f9d9d9; }
+
+  .modal-title{
+    text-align: center;
+    font-size: 27px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+
+  .modal-title-edit{
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 6px;
+  }
+
+  .modal-index-label{
+    font-size: 27px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .modal-nickname-input{
+    font-family: inherit;
+    font-size: 27px;
+    font-weight: 800;
+    color: var(--ink);
+    text-align: center;
+    width: 230px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #e4e4e8;
+    outline: none;
+    padding: 2px 4px;
+    transition: border-color .15s ease;
+  }
+
+  .modal-nickname-input:focus{ border-bottom-color: var(--accent); }
+
+  .modal-sub, .modal-sub-input{
+    display: block;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--muted);
+    margin: 0 auto 28px;
+  }
+
+  .modal-sub-input{
+    width: 240px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #e4e4e8;
+    outline: none;
+    padding: 2px 4px 6px;
+    font-family: inherit;
+  }
+
+  .modal-sub-input:focus{ border-bottom-color: var(--accent); }
+
+  .modal-details{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 28px;
+    margin-bottom: 30px;
+  }
+
+  .modal-col p{
+    margin: 0 0 10px;
+    font-size: 16px;
+    color: var(--label);
+  }
+
+  .modal-col.modal-col-right{ text-align: right; }
+
+  .modal-color-block{ margin-bottom: 28px; }
+  .modal-color-label{
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .modal-color-row{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .color-picker-input{
+    -webkit-appearance: none;
+    appearance: none;
+    width: 52px;
+    height: 52px;
+    border: none;
+    border-radius: 50%;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .color-picker-input::-webkit-color-swatch-wrapper{ padding: 0; border-radius: 50%; }
+  .color-picker-input::-webkit-color-swatch{ border: 2px solid #e4e4e8; border-radius: 50%; }
+  .color-picker-input::-moz-color-swatch{ border: 2px solid #e4e4e8; border-radius: 50%; }
+
+  .color-clear-btn{
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 9px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    border: none;
+    background: #f4f4f6;
+    color: #9a9aa1;
+  }
+
+  .color-clear-btn:hover{ background: #ececee; color: #6c6c74; }
+
+  .kick-btn{
+    width: 100%;
+    padding: 16px 18px;
+    border: none;
+    border-radius: 14px;
+    background: #f4eaea;
+    color: #c23b3b;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background .15s ease;
+    margin-top: 12px;
+  }
+
+  .kick-btn:hover{ background: #f7dcdc; }
+
+  .modal-detail-input{
+    display: block;
+    width: 100%;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--label);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #e8e8ec;
+    padding: 4px 2px;
+    margin-bottom: 8px;
+    outline: none;
+  }
+
+  .modal-detail-input:focus{ border-bottom-color: var(--accent); }
+
+  .modal-col-right .modal-detail-input{ text-align: right; }
+
+  .leave-btn{
+    width: 100%;
+    padding: 16px 18px;
+    border: none;
+    border-radius: 14px;
+    background: #f4eaea;
+    color: #c23b3b;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+
+  .leave-btn:hover{ background: #f7dcdc; }
+</style>
+</head>
+<body>
+
+  <div class="seats">
+    <!-- Место 1 -->
+    <div class="seat-card" data-seat="1" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№1.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Место 2 -->
+    <div class="seat-card" data-seat="2" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№2.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Место 3 -->
+    <div class="seat-card" data-seat="3" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№3.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Место 4 -->
+    <div class="seat-card" data-seat="4" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№4.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Место 5 -->
+    <div class="seat-card" data-seat="5" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№5.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Место 6 -->
+    <div class="seat-card" data-seat="6" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№6.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Место 7 -->
+    <div class="seat-card" data-seat="7" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№7.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Место 8 -->
+    <div class="seat-card" data-seat="8" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№8.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Место 9 -->
+    <div class="seat-card" data-seat="9" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№9.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Место 10 -->
+    <div class="seat-card" data-seat="10" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">№10.</span> <span class="seat-nickname">Никнейм</span></div>
+        <div class="seat-sub">пол | возраст</div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+      <div class="seat-details">
+        <div class="details-col left">
+          <span>профессия</span>
+          <span>здоровье</span>
+          <span>фобия</span>
+          <span>хобби</span>
+        </div>
+        <div class="details-col right">
+          <span>багаж</span>
+          <span>факт 1</span>
+          <span>факт 2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ведущий -->
+    <div class="seat-card host-card" data-seat="host" role="button" tabindex="0">
+      <video class="seat-video-bg" autoplay playsinline muted></video>
+      <div class="seat-header">
+        <div class="seat-number"><span class="seat-index">Ведущий.</span> <span class="seat-nickname">Super XØ</span></div>
+      </div>
+      <div class="seat-avatar-wrap">
+        <div class="seat-avatar-inner">
+          <div class="seat-avatar"><svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+          <button class="seat-cam-toggle" type="button" aria-label="Камера"><svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Другие функции -->
+    <div class="seat-card other-functions-card" id="otherFunctionsCard" role="button" tabindex="0">
+      <div class="other-functions-label">Другие функции</div>
+    </div>
+  </div>
+
+  <!-- Модальное окно места -->
+  <div class="modal-overlay" id="seatModal" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-modal="true">
+      <button class="modal-close" type="button" aria-label="Закрыть">&times;</button>
+
+      <div class="modal-avatar-block">
+        <div class="modal-avatar" id="modalAvatar"></div>
+        <div class="modal-avatar-actions">
+          <label class="avatar-btn" for="avatarFileInput">Сменить аватар</label>
+          <button type="button" class="avatar-remove-btn">Удалить</button>
+          <button type="button" class="camera-btn">Включить камеру</button>
+        </div>
+        <input type="file" id="avatarFileInput" accept="image/*" hidden>
+      </div>
+
+      <div class="modal-color-block">
+        <div class="modal-color-label">Цвет</div>
+        <div class="modal-color-row">
+          <input type="color" class="color-picker-input" value="#2f6fed" aria-label="Выбрать цвет">
+          <button type="button" class="color-clear-btn">Без цвета</button>
+        </div>
+      </div>
+
+      <h2 class="modal-title"></h2>
+      <div class="modal-title-edit" style="display:none;">
+        <span class="modal-index-label"></span>
+        <input type="text" class="modal-nickname-input" maxlength="24" placeholder="Никнейм">
+      </div>
+
+      <p class="modal-sub"></p>
+      <input type="text" class="modal-sub-input" style="display:none;" placeholder="пол | возраст">
+
+      <div class="modal-details">
+        <div class="modal-col modal-col-left"></div>
+        <div class="modal-col modal-col-right"></div>
+      </div>
+
+      <button class="leave-btn" type="button">Покинуть игру</button>
+      <button class="kick-btn" type="button" style="display:none;">Исключить с места</button>
+    </div>
+  </div>
+
+  <!-- Модальное окно «Другие функции» -->
+  <div class="modal-overlay" id="otherFunctionsModal" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-modal="true">
+      <button class="modal-close" type="button" aria-label="Закрыть">&times;</button>
+      <h2 class="modal-title">Другие функции</h2>
+      <div class="other-functions-list">
+        <button type="button" class="other-function-btn" id="refreshCamerasBtn">Обновить состояние камер</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  var DEFAULT_AVATAR_HTML = '<svg viewBox="0 0 24 24" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" fill="#b7b7c0"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="#b7b7c0" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+  var LEFT_KEYS = ['profession', 'health', 'phobia', 'hobby'];
+  var RIGHT_KEYS = ['baggage', 'fact1', 'fact2'];
+
+  function getOrCreateUserId(){
+    try{
+      var id = localStorage.getItem('bunker_user_id');
+      if(!id){
+        id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('u-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+        localStorage.setItem('bunker_user_id', id);
+      }
+      return id;
+    } catch(e){
+      return 'anon-' + Math.random().toString(16).slice(2);
+    }
+  }
+
+  var myUserId = getOrCreateUserId();
+
+  var seats = document.querySelectorAll('.seat-card:not(.other-functions-card)');
+  var overlay = document.getElementById('seatModal');
+  var titleEl = overlay.querySelector('.modal-title');
+  var subEl = overlay.querySelector('.modal-sub');
+  var subInput = overlay.querySelector('.modal-sub-input');
+  var detailsWrap = overlay.querySelector('.modal-details');
+  var leftColEl = overlay.querySelector('.modal-col-left');
+  var rightColEl = overlay.querySelector('.modal-col-right');
+  var leaveBtn = overlay.querySelector('.leave-btn');
+  var kickBtn = overlay.querySelector('.kick-btn');
+  var closeBtn = overlay.querySelector('.modal-close');
+  var colorBlock = overlay.querySelector('.modal-color-block');
+  var colorPickerInput = overlay.querySelector('.color-picker-input');
+  var colorClearBtn = overlay.querySelector('.color-clear-btn');
+
+  var otherFunctionsCard = document.getElementById('otherFunctionsCard');
+  var otherFunctionsOverlay = document.getElementById('otherFunctionsModal');
+  var refreshCamerasBtn = document.getElementById('refreshCamerasBtn');
+
+  var avatarBlock = overlay.querySelector('.modal-avatar-block');
+  var modalAvatar = overlay.querySelector('#modalAvatar');
+  var avatarActions = overlay.querySelector('.modal-avatar-actions');
+  var avatarFileInput = overlay.querySelector('#avatarFileInput');
+  var avatarRemoveBtn = overlay.querySelector('.avatar-remove-btn');
+  var cameraBtn = overlay.querySelector('.camera-btn');
+
+  var modalTitleEdit = overlay.querySelector('.modal-title-edit');
+  var modalIndexLabel = overlay.querySelector('.modal-index-label');
+  var nicknameInput = overlay.querySelector('.modal-nickname-input');
+
+  var mySeatId = null;
+  var activeCard = null;
+  var cameraOn = false;
+  var pushTimers = {};
+
+  function getSeatEl(seatId){ return document.querySelector('.seat-card[data-seat="' + seatId + '"]'); }
+
+  function notifyPresence(){
+    if(window.BunkerSync && typeof window.BunkerSync.updatePresence === 'function') window.BunkerSync.updatePresence();
+  }
+
+  function pushChange(seatId, patch){
+    if(!(window.BunkerSync && typeof window.BunkerSync.push === 'function')) return;
+    var key = seatId + ':' + Object.keys(patch).join(',');
+    clearTimeout(pushTimers[key]);
+    pushTimers[key] = setTimeout(function(){ window.BunkerSync.push(seatId, patch); }, 250);
+  }
+
+  function readSeatData(card){
+    var indexEl = card.querySelector('.seat-index');
+    var nicknameEl = card.querySelector('.seat-nickname');
+    var numberEl = card.querySelector('.seat-number');
+    var subElInner = card.querySelector('.seat-sub');
+    var avatarEl = card.querySelector('.seat-avatar');
+    var leftSpans = card.querySelectorAll('.details-col.left span');
+    return {
+      index: indexEl ? indexEl.textContent.trim() : '',
+      nickname: nicknameEl ? nicknameEl.textContent.trim() : '',
+      fullTitle: numberEl ? numberEl.textContent.trim() : '',
+      sub: subElInner ? subElInner.textContent.trim() : '',
+      hasSub: !!subElInner,
+      hasDetails: leftSpans.length > 0,
+      avatarHtml: avatarEl ? avatarEl.innerHTML : null
+    };
+  }
+
+  function renderDetailColumn(container, spans, editable, keys, seatId){
+    container.innerHTML = '';
+    Array.prototype.forEach.call(spans, function(span, i){
+      var key = keys[i];
+      if(editable){
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'modal-detail-input';
+        input.value = span.textContent.trim();
+        input.addEventListener('input', function(){
+          span.textContent = input.value;
+          var patch = { details: {} }; patch.details[key] = input.value;
+          pushChange(seatId, patch);
+        });
+        container.appendChild(input);
+      } else {
+        var p = document.createElement('p'); p.textContent = span.textContent.trim(); container.appendChild(p);
+      }
+    });
+  }
+
+  function openModal(card, mode){
+    activeCard = card;
+    var data = readSeatData(card);
+
+    avatarBlock.style.display = '';
+    modalAvatar.innerHTML = data.avatarHtml || DEFAULT_AVATAR_HTML;
+    avatarActions.style.display = (mode === 'own') ? '' : 'none';
+    if(mode === 'own') setCameraButtonState(cameraOn);
+
+    colorBlock.style.display = (mode === 'own') ? '' : 'none';
+    if(mode === 'own') colorPickerInput.value = card.dataset.color || '#2f6fed';
+
+    var nicknameEditable = (mode === 'own' || mode === 'hostEdit');
+    if(nicknameEditable){
+      titleEl.style.display = 'none'; modalTitleEdit.style.display = 'flex';
+      modalIndexLabel.textContent = data.index; nicknameInput.value = data.nickname;
+    } else {
+      modalTitleEdit.style.display = 'none'; titleEl.style.display = '';
+      titleEl.textContent = (data.index + ' ' + data.nickname).trim();
+    }
+
+    if(data.hasSub){
+      if(mode === 'hostEdit'){
+        subEl.style.display = 'none'; subInput.style.display = ''; subInput.value = data.sub;
+      } else {
+        subInput.style.display = 'none'; subEl.style.display = ''; subEl.textContent = data.sub;
+      }
+    } else { subEl.style.display = 'none'; subInput.style.display = 'none'; }
+
+    if(data.hasDetails){
+      detailsWrap.style.display = '';
+      var editable = (mode === 'hostEdit');
+      renderDetailColumn(leftColEl, card.querySelectorAll('.details-col.left span'), editable, LEFT_KEYS, card.dataset.seat);
+      renderDetailColumn(rightColEl, card.querySelectorAll('.details-col.right span'), editable, RIGHT_KEYS, card.dataset.seat);
+    } else { detailsWrap.style.display = 'none'; }
+
+    leaveBtn.style.display = (mode === 'own') ? '' : 'none';
+    leaveBtn.dataset.seat = card.dataset.seat;
+    var canKick = (mode === 'hostEdit' && !!(card.dataset.occupiedBy));
+    kickBtn.style.display = canKick ? '' : 'none';
+    kickBtn.dataset.seat = card.dataset.seat;
+
+    overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeModal(){ overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true'); activeCard = null; }
+
+  function markJoined(card){
+    seats.forEach(function(s){ s.classList.remove('joined'); });
+    if(card) card.classList.add('joined');
+  }
+
+  function joinSeat(card){
+    var seatId = card.dataset.seat;
+    mySeatId = seatId;
+    card.dataset.occupiedBy = myUserId;
+    markJoined(card);
+    pushChange(seatId, { occupiedBy: myUserId });
+    notifyPresence();
+  }
+
+  function handleSeatActivate(card){
+    var seatId = card.dataset.seat;
+    var occupiedBy = card.dataset.occupiedBy || '';
+    if(seatId === mySeatId){ openModal(card, 'own'); return; }
+    if(mySeatId === null && !occupiedBy){ joinSeat(card); return; }
+    openModal(card, mySeatId === 'host' ? 'hostEdit' : 'view');
+  }
+
+  seats.forEach(function(card){
+    card.dataset.occupiedBy = card.dataset.occupiedBy || '';
+    card.addEventListener('click', function(){ handleSeatActivate(card); });
+    card.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); handleSeatActivate(card); } });
+    var camToggle = card.querySelector('.seat-cam-toggle');
+    if(camToggle){
+      camToggle.addEventListener('click', function(e){
+        e.stopPropagation();
+        var seatId = card.dataset.seat;
+        if(seatId !== mySeatId) return;
+        if(!(window.BunkerSync && typeof window.BunkerSync.toggleCamera === 'function')){
+          alert('Файл realtime.js не подключён — камера работает только через него.'); return;
+        }
+        window.BunkerSync.toggleCamera(mySeatId);
+      });
+    }
+  });
+
+  function openOtherFunctionsModal(){
+    otherFunctionsOverlay.classList.add('open');
+    otherFunctionsOverlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeOtherFunctionsModal(){
+    otherFunctionsOverlay.classList.remove('open');
+    otherFunctionsOverlay.setAttribute('aria-hidden', 'true');
+  }
+
+  if(otherFunctionsCard){
+    otherFunctionsCard.addEventListener('click', openOtherFunctionsModal);
+    otherFunctionsCard.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        openOtherFunctionsModal();
+      }
+    });
+  }
+
+  otherFunctionsOverlay.querySelector('.modal-close').addEventListener('click', closeOtherFunctionsModal);
+  otherFunctionsOverlay.addEventListener('click', function(e){
+    if(e.target === otherFunctionsOverlay) closeOtherFunctionsModal();
+  });
+
+  refreshCamerasBtn.addEventListener('click', function(){
+    if(window.BunkerSync && typeof window.BunkerSync.refreshStatus === 'function'){
+      window.BunkerSync.refreshStatus();
+      alert('Статусы обновлены! Если камеры не появились, попросите остальных тоже нажать эту кнопку.');
+    } else {
+      alert('Файл realtime.js не подключён или устарел.');
+    }
+  });
+
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', function(e){ if(e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      closeModal();
+      closeOtherFunctionsModal();
+    }
+  });
+
+  leaveBtn.addEventListener('click', function(){
+    var seatId = leaveBtn.dataset.seat;
+    if(window.BunkerSync && typeof window.BunkerSync.stopCameraIfActive === 'function') window.BunkerSync.stopCameraIfActive(seatId);
+    var card = getSeatEl(seatId);
+    if(card){ card.classList.remove('joined'); card.dataset.occupiedBy = ''; }
+    if(mySeatId === seatId) mySeatId = null;
+    pushChange(seatId, { occupiedBy: '' }); notifyPresence(); closeModal();
+  });
+
+  nicknameInput.addEventListener('input', function(){
+    if(!activeCard) return;
+    var nicknameEl = activeCard.querySelector('.seat-nickname');
+    if(!nicknameEl) return;
+    var val = nicknameInput.value;
+    var finalVal = val.trim() === '' ? 'Никнейм' : val;
+    nicknameEl.textContent = finalVal;
+    pushChange(activeCard.dataset.seat, { nickname: finalVal });
+  });
+
+  subInput.addEventListener('input', function(){
+    if(!activeCard) return;
+    var subElInner = activeCard.querySelector('.seat-sub');
+    if(subElInner) subElInner.textContent = subInput.value;
+    pushChange(activeCard.dataset.seat, { sub: subInput.value });
+  });
+
+  avatarFileInput.addEventListener('change', function(){
+    var file = avatarFileInput.files && avatarFileInput.files[0];
+    avatarFileInput.value = '';
+    if(!file || !activeCard) return;
+    if(file.type.indexOf('image/') !== 0) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var imgHtml = '<img src="' + e.target.result + '" alt="">';
+      var cardAvatarEl = activeCard.querySelector('.seat-avatar');
+      if(cardAvatarEl) cardAvatarEl.innerHTML = imgHtml;
+      modalAvatar.innerHTML = imgHtml;
+      pushChange(activeCard.dataset.seat, { avatarDataUrl: e.target.result });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  avatarRemoveBtn.addEventListener('click', function(){
+    if(!activeCard) return;
+    var cardAvatarEl = activeCard.querySelector('.seat-avatar');
+    if(cardAvatarEl) cardAvatarEl.innerHTML = DEFAULT_AVATAR_HTML;
+    modalAvatar.innerHTML = DEFAULT_AVATAR_HTML;
+    pushChange(activeCard.dataset.seat, { avatarDataUrl: null });
+  });
+
+  function setSeatColor(seatId, color){
+    var card = getSeatEl(seatId);
+    if(!card) return;
+    card.dataset.color = color || '';
+    if(color){ card.style.setProperty('--player-color', color); card.classList.add('has-color'); }
+    else { card.style.removeProperty('--player-color'); card.classList.remove('has-color'); }
+  }
+
+  colorPickerInput.addEventListener('input', function(){
+    if(!activeCard) return;
+    var color = colorPickerInput.value;
+    setSeatColor(activeCard.dataset.seat, color);
+    pushChange(activeCard.dataset.seat, { color: color });
+  });
+
+  colorClearBtn.addEventListener('click', function(){
+    if(!activeCard) return;
+    setSeatColor(activeCard.dataset.seat, '');
+    colorPickerInput.value = '#2f6fed';
+    pushChange(activeCard.dataset.seat, { color: '' });
+  });
+
+  kickBtn.addEventListener('click', function(){
+    var seatId = kickBtn.dataset.seat;
+    if(!seatId) return;
+    if(!confirm('Исключить этого игрока с места?')) return;
+    var card = getSeatEl(seatId);
+    if(card){ card.classList.remove('joined'); card.dataset.occupiedBy = ''; }
+    pushChange(seatId, { occupiedBy: '' }); closeModal();
+  });
+
+  function setCameraButtonState(on){
+    cameraOn = on;
+    cameraBtn.textContent = on ? 'Выключить камеру' : 'Включить камеру';
+    cameraBtn.classList.toggle('on', on);
+    if(mySeatId){
+      var myCard = getSeatEl(mySeatId);
+      if(myCard){
+        var toggle = myCard.querySelector('.seat-cam-toggle');
+        if(toggle) toggle.classList.toggle('on', on);
+      }
+    }
+  }
+
+  cameraBtn.addEventListener('click', function(){
+    if(!mySeatId) return;
+    if(!(window.BunkerSync && typeof window.BunkerSync.toggleCamera === 'function')){ alert('Файл realtime.js не подключён.'); return; }
+    window.BunkerSync.toggleCamera(mySeatId);
+  });
+
+  function setSeatVideo(seatId, stream, muted){
+    var card = getSeatEl(seatId);
+    if(!card) return;
+    var videoBg = card.querySelector('.seat-video-bg');
+    if(!videoBg) return;
+    videoBg.muted = !!muted;
+    videoBg.srcObject = stream;
+    card.classList.add('video-active');
+    var playPromise = videoBg.play();
+    if(playPromise && typeof playPromise.catch === 'function'){
+      playPromise.catch(function(err){ console.warn('[Bunker] video play() blocked', seatId, err); });
+    }
+  }
+
+  function clearSeatVideo(seatId){
+    var card = getSeatEl(seatId);
+    if(!card) return;
+    var videoBg = card.querySelector('.seat-video-bg');
+    if(videoBg) videoBg.srcObject = null;
+    card.classList.remove('video-active');
+  }
+
+  function applyRemoteSeat(seatId, patch){
+    var card = getSeatEl(seatId);
+    if(!card) return;
+
+    if('occupiedBy' in patch){
+      card.dataset.occupiedBy = patch.occupiedBy || '';
+      if(patch.occupiedBy && patch.occupiedBy === myUserId){
+        mySeatId = seatId; markJoined(card); notifyPresence();
+      } else {
+        card.classList.remove('joined');
+        if(mySeatId === seatId){
+          mySeatId = null;
+          if(window.BunkerSync && typeof window.BunkerSync.stopCameraIfActive === 'function') window.BunkerSync.stopCameraIfActive(seatId);
+          if(activeCard === card) closeModal();
+        }
+      }
+    }
+
+    if('color' in patch) setSeatColor(seatId, patch.color);
+    if('nickname' in patch && patch.nickname != null){
+      var nickEl = card.querySelector('.seat-nickname');
+      if(nickEl) nickEl.textContent = patch.nickname || 'Никнейм';
+    }
+    if('sub' in patch && patch.sub != null){
+      var subElInner = card.querySelector('.seat-sub');
+      if(subElInner) subElInner.textContent = patch.sub;
+    }
+    if('avatarDataUrl' in patch){
+      var avatarEl = card.querySelector('.seat-avatar');
+      if(avatarEl) avatarEl.innerHTML = patch.avatarDataUrl ? ('<img src="' + patch.avatarDataUrl + '" alt="">') : DEFAULT_AVATAR_HTML;
+    }
+    if(patch.details){
+      var leftSpans = card.querySelectorAll('.details-col.left span');
+      var rightSpans = card.querySelectorAll('.details-col.right span');
+      LEFT_KEYS.forEach(function(key, i){ if(patch.details[key] != null && leftSpans[i]) leftSpans[i].textContent = patch.details[key]; });
+      RIGHT_KEYS.forEach(function(key, i){ if(patch.details[key] != null && rightSpans[i]) rightSpans[i].textContent = patch.details[key]; });
+    }
+  }
+
+  window.BunkerUI = {
+    applyRemoteSeat: applyRemoteSeat,
+    getSeatEl: getSeatEl,
+    getMyUserId: function(){ return myUserId; },
+    getMySeatId: function(){ return mySeatId; },
+    setSeatVideo: setSeatVideo,
+    clearSeatVideo: clearSeatVideo,
+    setCameraButtonState: setCameraButtonState
+  };
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="realtime.js"></script>
+
+</body>
+</html>
